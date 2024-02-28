@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "baseUrl": "./",
+    "esModuleInterop": true,
+    "module": "commonjs",
+    "paths": {
+      "~/*": ["./src/*"],
+    }
+  },
+  "exclude": ["node_modules"]
+}

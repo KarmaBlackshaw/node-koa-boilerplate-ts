@@ -1,0 +1,95 @@
+import knex from '~/config/knex'
+
+// libs
+import _ from 'lodash'
+
+// utilities
+import createError from '~/utilities/createError'
+
+const FIELDS = [
+  'id'
+]
+
+const FIELDS_WITHOUT_ID = FIELDS.filter(x => x !== 'id')
+
+export default {
+  async list ({
+    query,
+    is_count: isCount,
+    is_first: isFirst
+  } = {}) {
+    const fields = {
+      id: {
+        column: '{{ pluralSnakeCase name }}.id',
+        filterable: true,
+        sortable: true
+      },
+      deleted_at: {
+        column: '{{ pluralSnakeCase name }}.deleted_at',
+        filterable: true,
+        sortable: true
+      }
+    }
+
+    const list = await knex('{{ pluralSnakeCase name }}')
+      .metaQuery({ ...query, is_count: isCount }, fields)
+      .modify(function () {
+        if (isCount) {
+          this
+            .count({ total: '{{ pluralSnakeCase name }}.id' })
+            .first()
+        } else {
+          this.select(FIELDS)
+        }
+
+        if (isFirst) {
+          this.limit(1)
+        }
+      })
+
+    if (isCount) {
+      return _.get(list, 'total', 0)
+    }
+
+    return isFirst ? _.first(list) : list
+  },
+
+  async store ({
+    body,
+    trx = knex
+  }) {
+    const insertBody = _.pick(body, FIELDS_WITHOUT_ID)
+
+    const [id] = await trx('{{ pluralSnakeCase name }}')
+      .insert(insertBody)
+
+    return id
+  },
+
+  async modify ({
+    body,
+    trx = knex
+  }) {
+    const updateObject = _.pick(body, FIELDS_WITHOUT_ID)
+
+    if (_.isEmpty(updateObject)) {
+      return createError({
+        status: 400,
+        message: 'No fields to update'
+      })
+    }
+
+    await trx('{{ pluralSnakeCase name }}')
+      .update(updateObject)
+      .where('id', body.id)
+  },
+
+  async delete ({
+    ids,
+    trx = knex
+  }) {
+    await trx('{{ pluralSnakeCase name }}')
+      .whereIn('id', _.castArray(ids))
+      .del()
+  }
+}

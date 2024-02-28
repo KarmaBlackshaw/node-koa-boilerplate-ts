@@ -1,0 +1,18 @@
+version: '3'
+services:
+  hotel-management-db:
+    image: mysql:5.7
+    platform: linux/amd64
+    ports:
+      - 3306:3306
+    environment:
+      MYSQL_ROOT_PASSWORD: 12341234
+    command: --sql-mode="STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION"
+    volumes:
+      - db_data:/var/lib/mysql
+  redis:
+    image: redis:latest
+    ports:
+      - 6379:6379
+volumes:
+  db_data:
